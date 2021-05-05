@@ -18,7 +18,7 @@ namespace approvefreight_api
 
     public class getTotalResponse
     {
-        public getTotal response { get; set; }
+        public getTotal data { get; set; }
     }
 
     /*
@@ -32,7 +32,7 @@ namespace approvefreight_api
 
     public class companyResponse
     {
-        public List<company> response { get; set; }
+        public List<company> data { get; set; }
     }
 
     /*
@@ -47,7 +47,7 @@ namespace approvefreight_api
 
     public class companyUnitResponse
     {
-        public List<companyUnit> response { get; set; }
+        public List<companyUnit> data { get; set; }
     }
 
     /*
@@ -62,7 +62,7 @@ namespace approvefreight_api
 
     public class channelResponse
     {
-        public List<channel> response { get; set; }
+        public List<channel> data { get; set; }
     }
 
     /*
@@ -77,7 +77,7 @@ namespace approvefreight_api
 
     public class carrierResponse
     {
-        public List<carrier> response { get; set; }
+        public List<carrier> data { get; set; }
     }
 
     /*
@@ -97,7 +97,7 @@ namespace approvefreight_api
 
     public class protocol_redchannel_response
     {
-        public List<protocol_redchannel> response { get; set; }
+        public List<protocol_redchannel> data { get; set; }
     }
 
     /*
@@ -119,7 +119,7 @@ namespace approvefreight_api
 
     public class protocol_unsuccessful_collection_response
     {
-        public List<protocol_unsuccessful_collection> response { get; set; }
+        public List<protocol_unsuccessful_collection> data { get; set; }
     }
 
     /*
@@ -139,7 +139,7 @@ namespace approvefreight_api
 
     public class protocol_expensive_shipping_response
     {
-        public List<protocol_expensive_shipping> response { get; set; }
+        public List<protocol_expensive_shipping> data { get; set; }
     }
 
     /*
@@ -163,7 +163,7 @@ namespace approvefreight_api
 
     public class protocol_ocurrences_response
     {
-        public List<protocol_ocurrences> response { get; set; }
+        public List<protocol_ocurrences> data { get; set; }
     }
 
     /*
@@ -181,7 +181,7 @@ namespace approvefreight_api
 
     public class protocol_weight_response
     {
-        public List<protocol_weight> response { get; set; }
+        public List<protocol_weight> data { get; set; }
     }
 
     /*
@@ -203,6 +203,6 @@ namespace approvefreight_api
 
     public class protocol_ocurrences_revalidation_response
     {
-        public List<protocol_ocurrences_revalidation> response { get; set; }
+        public List<protocol_ocurrences_revalidation> data { get; set; }
     }
 }

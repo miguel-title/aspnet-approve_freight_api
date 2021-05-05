@@ -21,7 +21,7 @@ namespace approvefreight_api.Controllers
             _totalData.totalExpensivesShipping = 3;
             _totalData.totalRevalidations = 4;
             _totalData.totalUnsuccessfulCollection = 5;
-            responseData.response = _totalData;
+            responseData.data = _totalData;
             return responseData;
         }
     }
