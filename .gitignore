@@ -1,3 +1,5 @@
 /.vs
 /approvefreight_api/bin
 /approvefreight_api/obj
+/approvefreight_api/approvefreight_api.csproj
+/approvefreight_api/approvefreight_api.csproj.user
