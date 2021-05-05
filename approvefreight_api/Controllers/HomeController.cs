@@ -59,6 +59,7 @@ namespace approvefreight_api.Controllers
                 responseData.data = null;
                 return Unauthorized(responseData);
             }
+            //
 
             var totalRedChannels = 0;
             var totalOcurrences = 0;
@@ -96,12 +97,12 @@ namespace approvefreight_api.Controllers
             catch (Exception ex)
             {
                 //header
-                header.RequestStatus = "400";
+                header.RequestStatus = "500";
                 header.LanguageCode = "En";
                 header.ReturnMessage = ex.Message;
                 //data
                 responseData.data = null;
-                return BadRequest(responseData);
+                return StatusCode(500, responseData);
             }
 
             //Insert the data to the response

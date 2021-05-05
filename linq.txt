@@ -1,27 +1,297 @@
+=============HOME CONTROLLER=================
+
 select Count(*)
- from protocolo p 
- inner join unidade_empresa ue on ue.cod_unidade_empresa = p.cod_unidade_empresa 
- inner join nivel_Servico ns on ns.cod_nivel_servico = p.cod_nivel_servico 
- inner join transportadora t on t.cod_transportadora = p.cod_transportadora 
- left join prazo_entrega pe on pe.cod_prazo_entrega = p.cod_prazo_entrega 
- left join protocolo_cotacao pc on pc.cod_protocolo = p.cod_protocolo 
- where exists (select 0 from aprovacao_alcada ap 
- inner join alcada_aprovacao al on al.cod_alcada_aprovacao = ap.cod_alcada_aprovacao 
- where ap.cod_protocolo = p.cod_protocolo 
- and al.COD_TIPO_ALCADA_APROVACAO = 2 and ap.dat_aprovacao is null)
+from protocolo p 
+inner join unidade_empresa ue on ue.cod_unidade_empresa = p.cod_unidade_empresa 
+inner join nivel_Servico ns on ns.cod_nivel_servico = p.cod_nivel_servico 
+inner join transportadora t on t.cod_transportadora = p.cod_transportadora 
+left join prazo_entrega pe on pe.cod_prazo_entrega = p.cod_prazo_entrega 
+left join protocolo_cotacao pc on pc.cod_protocolo = p.cod_protocolo 
+where exists (select 0 from aprovacao_alcada ap 
+inner join alcada_aprovacao al on al.cod_alcada_aprovacao = ap.cod_alcada_aprovacao 
+where ap.cod_protocolo = p.cod_protocolo 
+and al.COD_TIPO_ALCADA_APROVACAO = 2 and ap.dat_aprovacao is null)
+
+-------------------------------
+
+(from p in PROTOCOLOs
+join ue in UNIDADE_EMPRESAs on p.COD_UNIDADE_EMPRESA equals ue.COD_UNIDADE_EMPRESA
+join ns in NIVEL_SERVICOs on p.COD_NIVEL_SERVICO equals ns.COD_NIVEL_SERVICO
+join t in TRANSPORTADORAs on p.COD_TRANSPORTADORA equals t.COD_TRANSPORTADORA
+join pe in PRAZO_ENTREGAs on p.COD_PRAZO_ENTREGA equals pe.COD_PRAZO_ENTREGA into tmp1
+from tmp1result in tmp1.DefaultIfEmpty()
+join pc in PROTOCOLO_COTACAOs on p.COD_PROTOCOLO equals pc.COD_PROTOCOLO into tmp2
+from tmp2result in tmp2.DefaultIfEmpty()
+where (
+from ap in APROVACAO_ALCADAs
+join al in ALCADA_APROVACAOs on ap.COD_ALCADA_APROVACAO equals al.COD_ALCADA_APROVACAO
+where ap.COD_PROTOCOLO == p.COD_PROTOCOLO && al.COD_TIPO_ALCADA_APROVACAO == 2 && ap.DAT_APROVACAO == null
+select 0
+).Count() > 0
+select p
+).Count();
+
+ ==============================
+
+select distinct p.COD_PROTOCOLO,(select top 1 nom_cliente from evento_erp erp where erp.cod_protocolo = p.cod_protocolo) as [cliente],  
+mop.DSC_MOTIVO_OCORRENCIA_PADRAO,t.nom_fantasia, convert(nvarchar, r.dat_saida, 103) as [dat_saida], convert(nvarchar, p.dat_limite_entrega, 103) as [dat_limite_entrega],  
+(p.VAL_FRETE_PESO + p.VAL_TAXA_TOTAL) as [VALOR], 
+p.VALIDACAO_ACAO_TRANSPORTADORA,  
+u.nom_usuario,  
+l.sgl_unidade_federacao
+from protocolo p 
+inner join unidade_empresa ue on ue.cod_unidade_empresa = p.cod_unidade_empresa 
+inner join ocorrencia_transporte ot on ot.cod_ocorrencia_transporte = p.cod_ocorrencia_transporte_acao 
+inner join aprovacao_alcada aa on aa.cod_protocolo = p.cod_protocolo and aa.cod_ocorrencia_transporte = p.COD_OCORRENCIA_TRANSPORTE_ACAO 
+inner join romaneio r on r.cod_romaneio = p.cod_romaneio 
+inner join localidade l on l.cod_localidade = p.cod_localidade 
+inner join motivo_ocorrencia_padrao mop on mop.cod_motivo_ocorrencia_padrao = ot.cod_motivo_ocorrencia_padrao 
+inner join transportadora t on t.cod_transportadora = r.cod_transportadora 
+inner join usuario u on u.cod_usuario = aa.cod_usuario_validador 
+where aa.DAT_APROVACAO is null 
+and aa.cod_alcada_aprovacao IN ( select ao.cod_alcada_aprovacao from aprovador_ocorrencia ao where ao.cod_usuario = 855 and ao.cod_unidade_empresa = ue.cod_unidade_empresa)
+
+ -----------------------------
+
+(
+from p in PROTOCOLOs
+join ue in UNIDADE_EMPRESAs on p.COD_UNIDADE_EMPRESA equals ue.COD_UNIDADE_EMPRESA
+join ot in OCORRENCIA_TRANSPORTEs on p.COD_OCORRENCIA_TRANSPORTE_ACAO equals ot.COD_OCORRENCIA_TRANSPORTE
+join aa in APROVACAO_ALCADAs on p.COD_PROTOCOLO equals aa.COD_PROTOCOLO where p.COD_OCORRENCIA_TRANSPORTE_ACAO == aa.COD_OCORRENCIA_TRANSPORTE
+join r in ROMANEIOs on p.COD_ROMANEIO equals r.COD_ROMANEIO
+join l in LOCALIDADEs on p.COD_LOCALIDADE equals l.COD_LOCALIDADE
+join mop in MOTIVO_OCORRENCIA_PADRAOs on ot.COD_MOTIVO_OCORRENCIA_PADRAO equals mop.COD_MOTIVO_OCORRENCIA_PADRAO
+join t in TRANSPORTADORAs on r.COD_TRANSPORTADORA equals t.COD_TRANSPORTADORA
+join u in USUARIOs on aa.COD_USUARIO_VALIDADOR equals u.COD_USUARIO
+where aa.DAT_APROVACAO == null && (from ao in APROVADOR_OCORRENCIAs where ao.COD_USUARIO == 855 && ao.COD_UNIDADE_EMPRESA == ue.COD_UNIDADE_EMPRESA select ao.COD_ALCADA_APROVACAO).Contains(aa.COD_ALCADA_APROVACAO)
+select new { p.COD_PROTOCOLO, cliente = (from erp in EVENTO_ERPs where p.COD_PROTOCOLO == erp.COD_PROTOCOLO select erp.NOM_CLIENTE).FirstOrDefault(), mop.DSC_MOTIVO_OCORRENCIA_PADRAO, 
+t.NOM_FANTASIA, dat_saida = r.DAT_SAIDA.ToString(), dat_limite_entrega = p.DAT_LIMITE_ENTREGA.ToString(), VALOR = p.VAL_FRETE_PESO + p.VAL_TAXA_TOTAL, p.VALIDACAO_ACAO_TRANSPORTADORA,
+u.NOM_USUARIO, l.SGL_UNIDADE_FEDERACAO}
+).Distinct().Count();
+
+ =============================
+
+select count(*)
+from protocolo p 
+inner join romaneio r on r.cod_romaneio =  p.cod_romaneio 
+where exists (select 0 from aprovacao_alcada ap 
+inner join alcada_aprovacao al on al.cod_alcada_aprovacao = ap.cod_alcada_aprovacao 
+where ap.cod_protocolo = p.cod_protocolo 
+and al.COD_TIPO_ALCADA_APROVACAO = 3 and ap.dat_aprovacao is null)
+
+-----------------------------
+
+(
+from p in PROTOCOLOs
+join r in ROMANEIOs on p.COD_ROMANEIO equals r.COD_ROMANEIO
+where (from ap in APROVACAO_ALCADAs
+join al in ALCADA_APROVACAOs on ap.COD_ALCADA_APROVACAO equals al.COD_ALCADA_APROVACAO
+where ap.COD_PROTOCOLO == p.COD_PROTOCOLO && al.COD_TIPO_ALCADA_APROVACAO == 3 && ap.DAT_APROVACAO == null
+select 0).Count() > 0
+select p
+).Count();
 
 
- from p in protocolo
- join ue in unidade_empresa on p.cod_unidade_empresa equals ue.cod_unidade_empresa
- join ns in nivel_Servico on p.cod_nivel_servico equals ns.cod_nivel_servico
- join t in transportadora on p.cod_transportadora equals t.cod_transportadora 
- into tmp1
- join pe in prazo_entrega on p.cod_prazo_entrega equals pe.cod_prazo_entrega
- into tmp2
- join pc in protocolo_cotacao on p.cod_protocolo equals pc.cod_protocolo
+=============================
+
+select Count(*)
+from protocolo p 
+inner join unidade_empresa ue on ue.cod_unidade_empresa = p.cod_unidade_empresa 
+where exists (select 0 from aprovacao_alcada ap 
+inner join alcada_aprovacao al on al.cod_alcada_aprovacao = ap.cod_alcada_aprovacao 
+where ap.cod_protocolo = p.cod_protocolo 
+and al.COD_TIPO_ALCADA_APROVACAO = 4 and ap.dat_aprovacao is null)
+
+----------------------------
+
+(
+from p in PROTOCOLOs
+join ue in UNIDADE_EMPRESAs on p.COD_UNIDADE_EMPRESA equals ue.COD_UNIDADE_EMPRESA
+where (from ap in APROVACAO_ALCADAs
+join al in ALCADA_APROVACAOs on ap.COD_ALCADA_APROVACAO equals al.COD_ALCADA_APROVACAO
+where ap.COD_PROTOCOLO == p.COD_PROTOCOLO && al.COD_TIPO_ALCADA_APROVACAO == 4 && ap.DAT_APROVACAO == null
+select 0).Count() > 0
+select p
+).Count();
+
+============================
+
+select Count(*) 
+from protocolo p 
+inner join unidade_empresa ue on ue.cod_unidade_empresa = p.cod_unidade_empresa 
+inner join nivel_Servico ns on ns.cod_nivel_servico = p.cod_nivel_servico 
+inner join transportadora t on t.cod_transportadora = p.cod_transportadora 
+left join prazo_entrega pe on pe.cod_prazo_entrega = p.cod_prazo_entrega 
+left join protocolo_cotacao pc on pc.cod_protocolo = p.cod_protocolo 
+where exists (select 0 from aprovacao_alcada ap 
+inner join alcada_aprovacao al on al.cod_alcada_aprovacao = ap.cod_alcada_aprovacao 
+where ap.cod_protocolo = p.cod_protocolo 
+and al.COD_TIPO_ALCADA_APROVACAO = 5 and ap.dat_aprovacao is null)
+
+-----------------------------
+
+(
+from p in PROTOCOLOs
+join ue in UNIDADE_EMPRESAs on p.COD_UNIDADE_EMPRESA equals ue.COD_UNIDADE_EMPRESA
+join ns in NIVEL_SERVICOs on p.COD_NIVEL_SERVICO equals ns.COD_NIVEL_SERVICO
+join t in TRANSPORTADORAs on p.COD_TRANSPORTADORA equals t.COD_TRANSPORTADORA
+join pe in PRAZO_ENTREGAs on p.COD_PRAZO_ENTREGA equals pe.COD_PRAZO_ENTREGA into tmp1
+from tmp1result in tmp1.DefaultIfEmpty()
+join pc in PROTOCOLO_COTACAOs on p.COD_PROTOCOLO equals pc.COD_PROTOCOLO into tmp2
+from tmp2result in tmp2.DefaultIfEmpty()
+where (from ap in APROVACAO_ALCADAs
+join al in ALCADA_APROVACAOs on ap.COD_ALCADA_APROVACAO equals al.COD_ALCADA_APROVACAO
+where ap.COD_PROTOCOLO == p.COD_PROTOCOLO && al.COD_TIPO_ALCADA_APROVACAO == 5 && ap.DAT_APROVACAO == null
+select 0).Count() > 0
+select p
+).Count();
+
+=============================
+
+select count(*) 
+from protocolo p 
+inner join localidade l on l.cod_localidade = p.cod_localidade 
+inner join unidade_empresa ue on ue.cod_unidade_empresa = p.cod_unidade_empresa 
+inner join ocorrencia_transporte ot on ot.cod_ocorrencia_transporte =  p.cod_ocorrencia_transporte_acao 
+inner join motivo_ocorrencia_padrao mop on mop.cod_motivo_ocorrencia_padrao =  ot.cod_motivo_ocorrencia_padrao 
+inner join transportadora t on t.cod_transportadora =  p.cod_transportadora 
+inner join romaneio r on r.cod_romaneio =  p.cod_romaneio 
+where isNull(p.ind_acao_transportadora,0) = 1 and p.dat_acao_transportadora is null 
+AND isNull(p.VALIDACAO_ACAO_TRANSPORTADORA,'') = ''
+
+------------------------------
+
+(
+from p in PROTOCOLOs
+join l in LOCALIDADEs on p.COD_LOCALIDADE equals l.COD_LOCALIDADE
+join ue in UNIDADE_EMPRESAs on p.COD_UNIDADE_EMPRESA equals ue.COD_UNIDADE_EMPRESA
+join ot in OCORRENCIA_TRANSPORTEs on p.COD_OCORRENCIA_TRANSPORTE_ACAO equals ot.COD_OCORRENCIA_TRANSPORTE
+join mop in MOTIVO_OCORRENCIA_PADRAOs on ot.COD_MOTIVO_OCORRENCIA_PADRAO equals mop.COD_MOTIVO_OCORRENCIA_PADRAO
+join t in TRANSPORTADORAs on p.COD_TRANSPORTADORA equals t.COD_TRANSPORTADORA
+join r in ROMANEIOs on p.COD_ROMANEIO equals r.COD_ROMANEIO
+where p.DAT_ACAO_TRANSPORTADORA == null && (p.IND_ACAO_TRANSPORTADORA == null ? "0" : p.IND_ACAO_TRANSPORTADORA.ToString()) == "1" && (p.VALIDACAO_ACAO_TRANSPORTADORA == null ? "":p.VALIDACAO_ACAO_TRANSPORTADORA) == ""
+select p
+).Count();
 
 
- from data in tmp2.DefaultIfEmpty()
- select new {
+==============COMPANY CONTROLLER================
 
- }
+SELECT nom_fantasia, cod_empresa
+FROM empresa
+ORDER BY nom_fantasia
+
+----------------------------------------
+
+from e in EMPRESAs
+orderby e.NOM_FANTASIA ascending
+select new
+{
+	nom_famtasia = e.NOM_FANTASIA, 
+	cod_empresa = e.COD_EMPRESA
+};
+
+===============COMPANY UNIT CONTROLLER============
+
+SELECT CONCAT (
+		NOM_UNIDADE_EMPRESA
+		,' - '
+		,e.nom_fantasia
+		) AS NOM_UNIDADE_EMPRESA
+	,COD_UNIDADE_EMPRESA
+FROM UNIDADE_EMPRESA ue
+INNER JOIN empresa e ON e.cod_empresa = ue.cod_empresa
+WHERE cod_unidade_empresa_expedidora IS NULL
+ORDER BY ue.NOM_UNIDADE_EMPRESA
+
+---------------------------------------
+
+from ue in UNIDADE_EMPRESAs
+join e in EMPRESAs on ue.COD_EMPRESA equals e.COD_EMPRESA
+where ue.COD_UNIDADE_EMPRESA_EXPEDIDORA == null
+orderby ue.NOM_UNIDADE_EMPRESA ascending
+select new {
+NOM_UNIDADE_EMPRESA = ue.NOM_UNIDADE_EMPRESA + "-" + e.NOM_FANTASIA,
+ue.COD_UNIDADE_EMPRESA
+};
+
+=================CHANNEL CONTROLLER==================
+
+SELECT DSC_CANAL_VENDA, COD_CANAL_VENDA
+FROM canal_venda c
+ORDER BY DSC_CANAL_VENDA
+
+---------------------------------------
+
+from c in CANAL_VENDAs
+orderby c.DSC_CANAL_VENDA ascending
+select new
+{
+	c.DSC_CANAL_VENDA, 
+	c.COD_CANAL_VENDA
+};
+
+=================CARRIER CONTROLLER===================
+
+SELECT cod_transportadora, nom_fantasia
+FROM transportadora t
+ORDER BY nom_fantasia
+
+--------------------------------------
+
+from t in TRANSPORTADORAs
+orderby t.NOM_FANTASIA ascending
+select new
+{
+	t.COD_TRANSPORTADORA, 
+	t.NOM_FANTASIA
+};
+
+=================PROTOCOL CONTROLLER==================
+
+SELECT ns.DSC_NIVEL_SERVICO
+	,p.cod_protocolo
+	,t.nom_fantasia
+	,isNull(VAL_FRETE_PESO, 0) + isNull(VAL_TAXA_TOTAL, 0) AS val_frete
+	,p.DSC_JUSTIFICATIVA_CANAL_VERMELHO
+	,(
+		SELECT TOP 1 DSC_ALCADA_APROVACAO
+		FROM alcada_aprovacao aa
+		INNER JOIN aprovacao_alcada aal ON aal.cod_alcada_aprovacao = aa.cod_alcada_aprovacao
+		WHERE aal.cod_protocolo = p.cod_protocolo
+			AND aa.cod_tipo_alcada_aprovacao = 2
+			AND aal.dat_aprovacao IS NULL
+		ORDER BY cod_aprovacao_alcada
+		) AS [ALCADA]
+	,isNull(pe.qtd_dia_prazo, pc.qtd_dia_prazo) AS qtd_dia_prazo
+FROM protocolo p
+INNER JOIN unidade_empresa ue ON ue.cod_unidade_empresa = p.cod_unidade_empresa
+INNER JOIN nivel_Servico ns ON ns.cod_nivel_servico = p.cod_nivel_servico
+INNER JOIN transportadora t ON t.cod_transportadora = p.cod_transportadora
+LEFT JOIN prazo_entrega pe ON pe.cod_prazo_entrega = p.cod_prazo_entrega
+LEFT JOIN protocolo_cotacao pc ON pc.cod_protocolo = p.cod_protocolo
+WHERE EXISTS (
+		SELECT 0
+		FROM aprovacao_alcada ap
+		INNER JOIN alcada_aprovacao al ON al.cod_alcada_aprovacao = ap.cod_alcada_aprovacao
+		WHERE ap.cod_protocolo = p.cod_protocolo
+			AND al.COD_TIPO_ALCADA_APROVACAO = 2
+			AND ap.dat_aprovacao IS NULL
+		)
+and p.cod_unidade_empresa = {cod_unidade_empresa?: int}
+and ue.cod_empresa = {cod_empresa?: int}
+and p.cod_transportadora = {cod_transportadora?: int}
+and p.cod_localidade in (
+select cod_localidade from localidade 
+where sgl_unidade_federacao in ({sgl_unidade_federacao?: string[]})
+)
+and exists (
+select 0 
+from evento_erp erp 
+where erp.cod_protocolo = p.cod_protocolo 
+and erp.COD_CANAL_VENDA = {cod_canal_venda?: int}
+)
+
+
+--------------------------------------
+
+======================================================
