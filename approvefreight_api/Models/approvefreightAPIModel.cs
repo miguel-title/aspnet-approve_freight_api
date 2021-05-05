@@ -4,6 +4,17 @@ using System.Collections.Generic;
 namespace approvefreight_api
 {
     /*
+    Get Response Header 
+     */
+    public class ResponseHeader
+    {
+        public string RequestStatus { get; set; }
+        public string ReturnCode { get; set; }
+        public string ReturnMessage { get; set; }
+        public string LanguageCode { get; set; }
+    }
+
+    /*
      Get Totals
      */
     public class getTotal
@@ -18,6 +29,7 @@ namespace approvefreight_api
 
     public class getTotalResponse
     {
+        public ResponseHeader Header { get; set; }
         public getTotal data { get; set; }
     }
 
@@ -32,6 +44,7 @@ namespace approvefreight_api
 
     public class companyResponse
     {
+        public ResponseHeader Header { get; set; }
         public List<company> data { get; set; }
     }
 
@@ -47,6 +60,7 @@ namespace approvefreight_api
 
     public class companyUnitResponse
     {
+        public ResponseHeader Header { get; set; }
         public List<companyUnit> data { get; set; }
     }
 
@@ -62,6 +76,7 @@ namespace approvefreight_api
 
     public class channelResponse
     {
+        public ResponseHeader Header { get; set; }
         public List<channel> data { get; set; }
     }
 
@@ -77,6 +92,7 @@ namespace approvefreight_api
 
     public class carrierResponse
     {
+        public ResponseHeader Header { get; set; }
         public List<carrier> data { get; set; }
     }
 
@@ -97,6 +113,7 @@ namespace approvefreight_api
 
     public class protocol_redchannel_response
     {
+        public ResponseHeader Header { get; set; }
         public List<protocol_redchannel> data { get; set; }
     }
 
@@ -119,6 +136,7 @@ namespace approvefreight_api
 
     public class protocol_unsuccessful_collection_response
     {
+        public ResponseHeader Header { get; set; }
         public List<protocol_unsuccessful_collection> data { get; set; }
     }
 
@@ -139,6 +157,7 @@ namespace approvefreight_api
 
     public class protocol_expensive_shipping_response
     {
+        public ResponseHeader Header { get; set; }
         public List<protocol_expensive_shipping> data { get; set; }
     }
 
@@ -163,6 +182,7 @@ namespace approvefreight_api
 
     public class protocol_ocurrences_response
     {
+        public ResponseHeader Header { get; set; }
         public List<protocol_ocurrences> data { get; set; }
     }
 
@@ -181,6 +201,7 @@ namespace approvefreight_api
 
     public class protocol_weight_response
     {
+        public ResponseHeader Header { get; set; }
         public List<protocol_weight> data { get; set; }
     }
 
@@ -203,6 +224,24 @@ namespace approvefreight_api
 
     public class protocol_ocurrences_revalidation_response
     {
+        public ResponseHeader Header { get; set; }
         public List<protocol_ocurrences_revalidation> data { get; set; }
+    }
+
+    //Get Token
+    public class LoginTokenVM
+    {
+        public string UserName { get; set; }
+        public string Password { get; set; }
+
+    }
+
+    public class ResponseTokenVM
+    {
+        public string Status { get; set; }
+        public string Message { get; set; }
+        public string token_type { get; set; }
+        public string access_token { get; set; }
+        public int expires_in { get; set; }
     }
 }

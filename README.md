@@ -13,6 +13,7 @@ EndPoints:
 
 Type  | EndPoint
 ------------- | -------------
+POST          | /v1/generatetoken
 GET           | /v1/home/get-totals
 GET           | /v1/company/ 
 GET           | /v1/company-unit/	
@@ -36,6 +37,7 @@ approvefreight_api
 	└── CompanyUniitControllers.cs
 	└── CarrierController.cs
 	└── ChannelController.cs
+	└── TokenController.cs
 └── Models
 	└── approvefreightAPIModel.cs
 	└── TMSWORKANA
@@ -56,6 +58,11 @@ approvefreight_api
 		└── Unidade_empresa.cs
 		└── Usuario.cs
 		└── TMSWORKANAContext.cs
+└── Helpers
+	└── Extension
+		└── ModelStateExtensions.cs
+	└── TokenManager
+		└── TokenManager.cs
 └── appsetting.json
 └── Program.cs
 └── Startup.cs
