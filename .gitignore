@@ -3,3 +3,4 @@
 /approvefreight_api/obj
 /approvefreight_api/approvefreight_api.csproj.user
 /approvefreight_api/appsettings.json
+/approvefreight_api/appsettings.Development.json
