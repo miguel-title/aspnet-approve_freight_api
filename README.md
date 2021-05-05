@@ -6,7 +6,7 @@ aspnet-approve_freight_api
 EndPoints:
 ------------
 
-- `GET /v1/home/get-totals`                                      
+- `GET                                        /v1/home/get-totals`                                      
 - GET /v1/company/		   				   			  			
 - GET /v1/company-unit/	   				   			 			
 - GET /v1/channel/		   				   			  			
