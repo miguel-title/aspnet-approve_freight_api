@@ -1,0 +1,27 @@
+select Count(*)
+ from protocolo p 
+ inner join unidade_empresa ue on ue.cod_unidade_empresa = p.cod_unidade_empresa 
+ inner join nivel_Servico ns on ns.cod_nivel_servico = p.cod_nivel_servico 
+ inner join transportadora t on t.cod_transportadora = p.cod_transportadora 
+ left join prazo_entrega pe on pe.cod_prazo_entrega = p.cod_prazo_entrega 
+ left join protocolo_cotacao pc on pc.cod_protocolo = p.cod_protocolo 
+ where exists (select 0 from aprovacao_alcada ap 
+ inner join alcada_aprovacao al on al.cod_alcada_aprovacao = ap.cod_alcada_aprovacao 
+ where ap.cod_protocolo = p.cod_protocolo 
+ and al.COD_TIPO_ALCADA_APROVACAO = 2 and ap.dat_aprovacao is null)
+
+
+ from p in protocolo
+ join ue in unidade_empresa on p.cod_unidade_empresa equals ue.cod_unidade_empresa
+ join ns in nivel_Servico on p.cod_nivel_servico equals ns.cod_nivel_servico
+ join t in transportadora on p.cod_transportadora equals t.cod_transportadora 
+ into tmp1
+ join pe in prazo_entrega on p.cod_prazo_entrega equals pe.cod_prazo_entrega
+ into tmp2
+ join pc in protocolo_cotacao on p.cod_protocolo equals pc.cod_protocolo
+
+
+ from data in tmp2.DefaultIfEmpty()
+ select new {
+
+ }

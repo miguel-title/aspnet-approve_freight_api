@@ -1,28 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
 
-namespace approvefreight_api.Models.TMSWORKANA
+#nullable disable
+
+namespace approvefreight_api.Models
 {
-    public class Localidade
+    public partial class Localidade
     {
-        public int? COD_LOCALIDADE { get; set; }
-        public string NOM_LOCALIDADE { get; set; }
-        public string COD_CEP { get; set; }
-        public int COD_REGIAO { get; set; }
-        public DateTime DAT_CTR_INCLUSAO { get; set; }
-        public string NOM_CTR_ACESSO { get; set; }
-        public string NOM_CTR_PROCESSO { get; set; }
-        public string NUM_LATITUDE { get; set; }
-        public string NUM_LONGITUDE { get; set; }
-        public string SGL_UNIDADE_FEDERACAO { get; set; }
-        public float ALQ_ISS { get; set; }
-        public int COD_MIG_SAP_NOVO { get; set; }
-        public int COD_REGIAO_LOCALIDADE { get; set; }
-        public int IND_SUFRAMA { get; set; }
-        public int COD_IBGE { get; set; }
-        public int IND_CAPITAL { get; set; }
-        public string SGL_REGIAO_BRASIL { get; set; }
+        public Localidade()
+        {
+            Empresas = new HashSet<Empresa>();
+        }
+
+        public int CodLocalidade { get; set; }
+        public string NomLocalidade { get; set; }
+        public string CodCep { get; set; }
+        public int? CodRegiao { get; set; }
+        public DateTime? DatCtrInclusao { get; set; }
+        public string NomCtrAcesso { get; set; }
+        public string NomCtrProcesso { get; set; }
+        public string NumLatitude { get; set; }
+        public string NumLongitude { get; set; }
+        public string SglUnidadeFederacao { get; set; }
+        public decimal? AlqIss { get; set; }
+        public int? CodMigSapNovo { get; set; }
+        public int? CodRegiaoLocalidade { get; set; }
+        public bool? IndSuframa { get; set; }
+        public int? CodIbge { get; set; }
+        public bool? IndCapital { get; set; }
+        public string SglRegiaoBrasil { get; set; }
+
+        public virtual ICollection<Empresa> Empresas { get; set; }
     }
 }
