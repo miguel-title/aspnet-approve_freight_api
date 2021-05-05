@@ -29,7 +29,6 @@ namespace approvefreight_api
             services.AddDbContext<TMSWORKANAContext>(options =>
                 options.UseSqlServer(Configuration.GetConnectionString("TMSConnection")));
 
-            services.AddDatabaseDeveloperPageExceptionFilter();
             services.AddControllers();
         }
 
