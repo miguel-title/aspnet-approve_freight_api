@@ -3,9 +3,9 @@ aspnet-approve_freight_api
 
 .Net Core Web Api to approve freight
 
-The software to be implemented will be an api restful built in .NET Core 3.1 WebAPI in C # language and will be consumed by an application in Flutter. 
+*The software to be implemented will be an api restful built in .NET Core 3.1 WebAPI in C # language and will be consumed by an application in Flutter. 
 In it, we will consult at 2 different banks. One to approve freight and the other to approve freight quotations.
-The details of the project can be found in the documentation in the annex.
+The details of the project can be found in the documentation in the annex.*
 
 
 EndPoints:
