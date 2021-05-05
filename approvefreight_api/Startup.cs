@@ -1,3 +1,4 @@
+using approvefreight_api.Models.TMSWORKANA;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -9,6 +10,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 
 namespace approvefreight_api
 {
@@ -24,6 +26,10 @@ namespace approvefreight_api
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddDbContext<TMSWORKANAContext>(options =>
+                options.UseSqlServer(Configuration.GetConnectionString("TMSConnection")));
+
+            services.AddDatabaseDeveloperPageExceptionFilter();
             services.AddControllers();
         }
 
