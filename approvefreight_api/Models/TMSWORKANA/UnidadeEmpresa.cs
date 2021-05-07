@@ -7,6 +7,11 @@ namespace approvefreight_api.Models
 {
     public partial class UnidadeEmpresa
     {
+        public UnidadeEmpresa()
+        {
+            AprovadorOcorrencia = new HashSet<AprovadorOcorrencium>();
+        }
+
         public int CodUnidadeEmpresa { get; set; }
         public string NomUnidadeEmpresa { get; set; }
         public int CodEmpresa { get; set; }
@@ -38,5 +43,7 @@ namespace approvefreight_api.Models
         public string TagIdBringg { get; set; }
         public string TimeBringg { get; set; }
         public string HorarioColetaBringg { get; set; }
+
+        public virtual ICollection<AprovadorOcorrencium> AprovadorOcorrencia { get; set; }
     }
 }

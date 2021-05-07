@@ -10,6 +10,7 @@ namespace approvefreight_api.Models
         public AlcadaAprovacao()
         {
             AprovacaoAlcada = new HashSet<AprovacaoAlcadum>();
+            AprovadorOcorrencia = new HashSet<AprovadorOcorrencium>();
         }
 
         public int CodAlcadaAprovacao { get; set; }
@@ -22,5 +23,6 @@ namespace approvefreight_api.Models
         public int? CodTipoAlcadaAprovacao { get; set; }
 
         public virtual ICollection<AprovacaoAlcadum> AprovacaoAlcada { get; set; }
+        public virtual ICollection<AprovadorOcorrencium> AprovadorOcorrencia { get; set; }
     }
 }

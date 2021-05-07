@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace approvefreight_api
 {
@@ -105,10 +106,10 @@ namespace approvefreight_api
         public string dsc_nivel_servico{ get; set; }
         public int cod_protocolo { get; set; }
         public string nom_fantasia { get; set; }
-        public string val_frete { get; set; }
+        public decimal? val_frete { get; set; }
         public string dsc_justificativa_canal_vermelho{ get; set; }
         public string alcada{ get; set; }
-        public int qtd_dia_prazo { get; set; }
+        public int? qtd_dia_prazo { get; set; }
     }
 
     public class protocol_redchannel_response
@@ -149,7 +150,7 @@ namespace approvefreight_api
         public string dsc_nivel_servico { get; set; }
         public int cod_protocolo { get; set; }
         public string nom_fantasia { get; set; }
-        public string val_frete { get; set; }
+        public Decimal val_frete { get; set; }
         public string alcada { get; set; }
         public int qtd_dia_prazo { get; set; }
         public int cod_romaneio { get; set; }
@@ -173,7 +174,7 @@ namespace approvefreight_api
         public string nom_fantasia { get; set; }
         public DateTime dat_saida { get; set; }
         public DateTime dat_limite_entrega { get; set; }
-        public string valor { get; set; }
+        public decimal valor { get; set; }
         public string notas { get; set; }
         public string validaao_acao_transportadora { get; set; }
         public string nom_usuario { get; set; }
@@ -231,8 +232,7 @@ namespace approvefreight_api
     //Get Token
     public class LoginTokenVM
     {
-        public string UserName { get; set; }
-        public string Password { get; set; }
+        public string UserEmail { get; set; }
 
     }
 

@@ -19,9 +19,11 @@ namespace approvefreight_api.Models
 
         public virtual DbSet<AlcadaAprovacao> AlcadaAprovacaos { get; set; }
         public virtual DbSet<AprovacaoAlcadum> AprovacaoAlcada { get; set; }
+        public virtual DbSet<AprovadorOcorrencium> AprovadorOcorrencia { get; set; }
         public virtual DbSet<CanalVendum> CanalVenda { get; set; }
         public virtual DbSet<Empresa> Empresas { get; set; }
         public virtual DbSet<EventoErp> EventoErps { get; set; }
+        public virtual DbSet<ItemEventoErp> ItemEventoErps { get; set; }
         public virtual DbSet<Localidade> Localidades { get; set; }
         public virtual DbSet<MotivoOcorrenciaPadrao> MotivoOcorrenciaPadraos { get; set; }
         public virtual DbSet<NivelServico> NivelServicos { get; set; }
@@ -39,7 +41,7 @@ namespace approvefreight_api.Models
             if (!optionsBuilder.IsConfigured)
             {
 #warning To protect potentially sensitive information in your connection string, you should move it out of source code. You can avoid scaffolding the connection string by using the Name= syntax to read it from configuration - see https://go.microsoft.com/fwlink/?linkid=2131148. For more guidance on storing connection strings, see http://go.microsoft.com/fwlink/?LinkId=723263.
-                optionsBuilder.UseSqlServer("Server=.\\SQLEXPRESS;Database=TMSWORKANA;Trusted_Connection=true;MultipleActiveResultSets=true;");
+                optionsBuilder.UseSqlServer("Server=cataldedb.nethorizontes.com.br,49725;Database=TMSWORKANA;User ID=workana;Password=cGg2UlFQZGJL;Trusted_Connection=true;MultipleActiveResultSets=true;Integrated Security = false;");
             }
         }
 
@@ -130,6 +132,44 @@ namespace approvefreight_api.Models
                     .WithMany(p => p.AprovacaoAlcada)
                     .HasForeignKey(d => d.CodAlcadaAprovacao)
                     .HasConstraintName("FK__APROVACAO__COD_A__4BAC3F29");
+            });
+
+            modelBuilder.Entity<AprovadorOcorrencium>(entity =>
+            {
+                entity.HasKey(e => e.CodAprovadorOcorrencia)
+                    .HasName("PK__APROVADO__F3E61405B0D1A7DE");
+
+                entity.ToTable("APROVADOR_OCORRENCIA");
+
+                entity.Property(e => e.CodAprovadorOcorrencia).HasColumnName("COD_APROVADOR_OCORRENCIA");
+
+                entity.Property(e => e.CodAlcadaAprovacao).HasColumnName("COD_ALCADA_APROVACAO");
+
+                entity.Property(e => e.CodUnidadeEmpresa).HasColumnName("COD_UNIDADE_EMPRESA");
+
+                entity.Property(e => e.CodUsuario).HasColumnName("COD_USUARIO");
+
+                entity.Property(e => e.DatCtrInclusao)
+                    .HasColumnType("datetime")
+                    .HasColumnName("DAT_CTR_INCLUSAO");
+
+                entity.Property(e => e.NomCtrAcesso)
+                    .HasMaxLength(20)
+                    .HasColumnName("NOM_CTR_ACESSO");
+
+                entity.Property(e => e.NomCtrProcesso)
+                    .HasMaxLength(40)
+                    .HasColumnName("NOM_CTR_PROCESSO");
+
+                entity.HasOne(d => d.CodAlcadaAprovacaoNavigation)
+                    .WithMany(p => p.AprovadorOcorrencia)
+                    .HasForeignKey(d => d.CodAlcadaAprovacao)
+                    .HasConstraintName("FK__APROVADOR__COD_A__778AC167");
+
+                entity.HasOne(d => d.CodUnidadeEmpresaNavigation)
+                    .WithMany(p => p.AprovadorOcorrencia)
+                    .HasForeignKey(d => d.CodUnidadeEmpresa)
+                    .HasConstraintName("FK__APROVADOR__COD_U__787EE5A0");
             });
 
             modelBuilder.Entity<CanalVendum>(entity =>
@@ -675,6 +715,141 @@ namespace approvefreight_api.Models
                     .WithMany(p => p.EventoErps)
                     .HasForeignKey(d => d.CodCanalVenda)
                     .HasConstraintName("FK__EVENTO_ER__COD_C__25918339");
+            });
+
+            modelBuilder.Entity<ItemEventoErp>(entity =>
+            {
+                entity.HasKey(e => e.CodItemEventoErp)
+                    .HasName("PK__ITEM_EVE__E3EBCCC6AFE79BE7");
+
+                entity.ToTable("ITEM_EVENTO_ERP");
+
+                entity.Property(e => e.CodItemEventoErp).HasColumnName("COD_ITEM_EVENTO_ERP");
+
+                entity.Property(e => e.AlqIcms)
+                    .HasColumnType("decimal(18, 7)")
+                    .HasColumnName("ALQ_ICMS");
+
+                entity.Property(e => e.AlqIcmsSubstituicaoTributaria)
+                    .HasColumnType("decimal(18, 7)")
+                    .HasColumnName("ALQ_ICMS_SUBSTITUICAO_TRIBUTARIA");
+
+                entity.Property(e => e.CodAuxiliarProduto)
+                    .HasMaxLength(20)
+                    .HasColumnName("COD_AUXILIAR_PRODUTO");
+
+                entity.Property(e => e.CodCfop)
+                    .HasMaxLength(250)
+                    .HasColumnName("COD_CFOP");
+
+                entity.Property(e => e.CodEventoErp).HasColumnName("COD_EVENTO_ERP");
+
+                entity.Property(e => e.CodExternoEmpresa)
+                    .HasMaxLength(8)
+                    .HasColumnName("COD_EXTERNO_EMPRESA");
+
+                entity.Property(e => e.CodExternoGrupoProduto)
+                    .HasMaxLength(36)
+                    .HasColumnName("COD_EXTERNO_GRUPO_PRODUTO");
+
+                entity.Property(e => e.CodExternoProduto)
+                    .HasMaxLength(36)
+                    .HasColumnName("COD_EXTERNO_PRODUTO");
+
+                entity.Property(e => e.CodExternoUnidadeEmpresa)
+                    .HasMaxLength(8)
+                    .HasColumnName("COD_EXTERNO_UNIDADE_EMPRESA");
+
+                entity.Property(e => e.CodProduto).HasColumnName("COD_PRODUTO");
+
+                entity.Property(e => e.CodRegistro)
+                    .HasMaxLength(2)
+                    .HasColumnName("COD_REGISTRO");
+
+                entity.Property(e => e.CodSequencial).HasColumnName("COD_SEQUENCIAL");
+
+                entity.Property(e => e.DatCtrInclusao)
+                    .HasColumnType("datetime")
+                    .HasColumnName("DAT_CTR_INCLUSAO");
+
+                entity.Property(e => e.DatNotaFiscal)
+                    .HasColumnType("datetime")
+                    .HasColumnName("DAT_NOTA_FISCAL");
+
+                entity.Property(e => e.DscGrupoProduto)
+                    .HasMaxLength(80)
+                    .HasColumnName("DSC_GRUPO_PRODUTO");
+
+                entity.Property(e => e.DscProduto)
+                    .HasMaxLength(80)
+                    .HasColumnName("DSC_PRODUTO");
+
+                entity.Property(e => e.IndCancelado).HasColumnName("IND_CANCELADO");
+
+                entity.Property(e => e.NomCtrAcesso)
+                    .HasMaxLength(40)
+                    .HasColumnName("NOM_CTR_ACESSO");
+
+                entity.Property(e => e.NomCtrProcesso)
+                    .HasMaxLength(80)
+                    .HasColumnName("NOM_CTR_PROCESSO");
+
+                entity.Property(e => e.NumCfop)
+                    .HasMaxLength(12)
+                    .HasColumnName("NUM_CFOP");
+
+                entity.Property(e => e.NumNotaFiscal)
+                    .HasMaxLength(12)
+                    .HasColumnName("NUM_NOTA_FISCAL");
+
+                entity.Property(e => e.NumPedido)
+                    .HasMaxLength(20)
+                    .HasColumnName("NUM_PEDIDO");
+
+                entity.Property(e => e.NumSerieNotaFiscal)
+                    .HasMaxLength(6)
+                    .HasColumnName("NUM_SERIE_NOTA_FISCAL");
+
+                entity.Property(e => e.QtdAltura)
+                    .HasColumnType("decimal(14, 7)")
+                    .HasColumnName("QTD_ALTURA");
+
+                entity.Property(e => e.QtdComprimento)
+                    .HasColumnType("decimal(14, 7)")
+                    .HasColumnName("QTD_COMPRIMENTO");
+
+                entity.Property(e => e.QtdLargura)
+                    .HasColumnType("decimal(14, 7)")
+                    .HasColumnName("QTD_LARGURA");
+
+                entity.Property(e => e.QtdPesoProduto).HasColumnName("QTD_PESO_PRODUTO");
+
+                entity.Property(e => e.QtdProduto).HasColumnName("QTD_PRODUTO");
+
+                entity.Property(e => e.VlrRateioPeso)
+                    .HasColumnType("decimal(14, 7)")
+                    .HasColumnName("VLR_RATEIO_PESO");
+
+                entity.Property(e => e.VlrRateioPesoTotal)
+                    .HasColumnType("decimal(14, 7)")
+                    .HasColumnName("VLR_RATEIO_PESO_TOTAL");
+
+                entity.Property(e => e.VlrRateioValor)
+                    .HasColumnType("decimal(14, 7)")
+                    .HasColumnName("VLR_RATEIO_VALOR");
+
+                entity.Property(e => e.VlrRateioValorTotal)
+                    .HasColumnType("decimal(14, 7)")
+                    .HasColumnName("VLR_RATEIO_VALOR_TOTAL");
+
+                entity.Property(e => e.VlrUnitarioFaturado)
+                    .HasColumnType("decimal(18, 7)")
+                    .HasColumnName("VLR_UNITARIO_FATURADO");
+
+                entity.HasOne(d => d.CodEventoErpNavigation)
+                    .WithMany(p => p.ItemEventoErps)
+                    .HasForeignKey(d => d.CodEventoErp)
+                    .HasConstraintName("FK__ITEM_EVEN__COD_E__2818EA29");
             });
 
             modelBuilder.Entity<Localidade>(entity =>

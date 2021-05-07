@@ -7,6 +7,11 @@ namespace approvefreight_api.Models
 {
     public partial class EventoErp
     {
+        public EventoErp()
+        {
+            ItemEventoErps = new HashSet<ItemEventoErp>();
+        }
+
         public int CodEventoErp { get; set; }
         public int? CodTransportadora { get; set; }
         public int? CodAgendamentoColeta { get; set; }
@@ -124,5 +129,6 @@ namespace approvefreight_api.Models
         public string NumOrdemVenda { get; set; }
 
         public virtual CanalVendum CodCanalVendaNavigation { get; set; }
+        public virtual ICollection<ItemEventoErp> ItemEventoErps { get; set; }
     }
 }

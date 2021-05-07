@@ -11,14 +11,14 @@ namespace approvefreight_api.Helper.TokenManager
     public class TokenManager
     {
         private static string Secret = "ERMN05OPLoDvbTTa/QkqLNMI7cPLguaRyHzyg7n5qNBVjQmtBhz4SzYh4NBVCXi3KJHlSXKP+oi2+bXr6CUYTR==";
-        public static string GenerateToken(string username)
+        public static string GenerateToken(string useremail)
         {
             byte[] key = Convert.FromBase64String(Secret);
             SymmetricSecurityKey securityKey = new SymmetricSecurityKey(key);
             SecurityTokenDescriptor descriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new[] {
-                      new Claim(ClaimTypes.Name, username)}),
+                      new Claim(ClaimTypes.Email, useremail)}),
                 Expires = DateTime.UtcNow.AddMinutes(30),
                 SigningCredentials = new SigningCredentials(securityKey,
                 SecurityAlgorithms.HmacSha256Signature)
@@ -56,7 +56,7 @@ namespace approvefreight_api.Helper.TokenManager
         }
         public static string ValidateToken(string token)
         {
-            string username = null;
+            string useremail = null;
             ClaimsPrincipal principal = GetPrincipal(token);
             if (principal == null)
                 return null;
@@ -69,9 +69,9 @@ namespace approvefreight_api.Helper.TokenManager
             {
                 return null;
             }
-            Claim usernameClaim = identity.FindFirst(ClaimTypes.Name);
-            username = usernameClaim.Value;
-            return username;
+            Claim usernameClaim = identity.FindFirst(ClaimTypes.Email);
+            useremail = usernameClaim.Value;
+            return useremail;
         }
     }
 }

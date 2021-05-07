@@ -17,12 +17,16 @@ namespace approvefreight_api.Controllers
         public async Task<ActionResult<ResponseTokenVM>>  GenerateToken(LoginTokenVM objVM)
         {
             int userStatus = 1;
-            //check if the user is valid 
-            //using (TMSWORKANAContext _context = new TMSWORKANAContext())
-            //{
-                
-            //}
-            
+            //check if the user is valid
+            using (TMSWORKANAContext _context = new TMSWORKANAContext())
+            {
+                var UserValid = (from user in _context.Usuarios
+                                   where user.EndEmail == objVM.UserEmail
+                                   select user).Count();
+                if (UserValid <= 0)
+                    userStatus = -1;
+            }
+
             if (userStatus == -1) 
                 return Ok(new ResponseTokenVM
                 {
@@ -41,7 +45,7 @@ namespace approvefreight_api.Controllers
                     Status = "Success",
                     Message= "",
                     token_type = "Bearer",
-                    access_token = TokenManager.GenerateToken(objVM.UserName),
+                    access_token = TokenManager.GenerateToken(objVM.UserEmail),
                     expires_in = 1800
                 });
         }

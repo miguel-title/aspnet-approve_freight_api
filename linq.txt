@@ -1,5 +1,5 @@
 =============HOME CONTROLLER=================
-
+===Red Channel
 select Count(*)
 from protocolo p 
 inner join unidade_empresa ue on ue.cod_unidade_empresa = p.cod_unidade_empresa 
@@ -31,7 +31,7 @@ select 0
 select p
 ).Count();
 
- ==============================
+==Ocurrences
 
 select distinct p.COD_PROTOCOLO,(select top 1 nom_cliente from evento_erp erp where erp.cod_protocolo = p.cod_protocolo) as [cliente],  
 mop.DSC_MOTIVO_OCORRENCIA_PADRAO,t.nom_fantasia, convert(nvarchar, r.dat_saida, 103) as [dat_saida], convert(nvarchar, p.dat_limite_entrega, 103) as [dat_limite_entrega],  
@@ -69,7 +69,7 @@ t.NOM_FANTASIA, dat_saida = r.DAT_SAIDA.ToString(), dat_limite_entrega = p.DAT_L
 u.NOM_USUARIO, l.SGL_UNIDADE_FEDERACAO}
 ).Distinct().Count();
 
- =============================
+===COLETA INFRUTIFERA
 
 select count(*)
 from protocolo p 
@@ -92,7 +92,7 @@ select p
 ).Count();
 
 
-=============================
+===Protocol Weight
 
 select Count(*)
 from protocolo p 
@@ -114,7 +114,7 @@ select 0).Count() > 0
 select p
 ).Count();
 
-============================
+===Expensive Shipping
 
 select Count(*) 
 from protocolo p 
@@ -146,7 +146,7 @@ select 0).Count() > 0
 select p
 ).Count();
 
-=============================
+===Revalidation
 
 select count(*) 
 from protocolo p 
@@ -169,7 +169,7 @@ join ot in OCORRENCIA_TRANSPORTEs on p.COD_OCORRENCIA_TRANSPORTE_ACAO equals ot.
 join mop in MOTIVO_OCORRENCIA_PADRAOs on ot.COD_MOTIVO_OCORRENCIA_PADRAO equals mop.COD_MOTIVO_OCORRENCIA_PADRAO
 join t in TRANSPORTADORAs on p.COD_TRANSPORTADORA equals t.COD_TRANSPORTADORA
 join r in ROMANEIOs on p.COD_ROMANEIO equals r.COD_ROMANEIO
-where p.DAT_ACAO_TRANSPORTADORA == null && (p.IND_ACAO_TRANSPORTADORA == null ? "0" : p.IND_ACAO_TRANSPORTADORA.ToString()) == "1" && (p.VALIDACAO_ACAO_TRANSPORTADORA == null ? "":p.VALIDACAO_ACAO_TRANSPORTADORA) == ""
+where p.DAT_ACAO_TRANSPORTADORA == null && (p.IND_ACAO_TRANSPORTADORA == null ? false : p.IND_ACAO_TRANSPORTADORA.ToString()) == true && (p.VALIDACAO_ACAO_TRANSPORTADORA == null ? "":p.VALIDACAO_ACAO_TRANSPORTADORA) == ""
 select p
 ).Count();
 
@@ -246,7 +246,9 @@ select new
 	t.NOM_FANTASIA
 };
 
-=================PROTOCOL CONTROLLER==================
+===================Protocol=====================
+
+===Get Red Channel
 
 SELECT ns.DSC_NIVEL_SERVICO
 	,p.cod_protocolo
@@ -277,6 +279,223 @@ WHERE EXISTS (
 			AND al.COD_TIPO_ALCADA_APROVACAO = 2
 			AND ap.dat_aprovacao IS NULL
 		)
+------------------------------------------
+
+from p in _context.Protocolos
+join ue in _context.UnidadeEmpresas on p.CodUnidadeEmpresa equals ue.CodUnidadeEmpresa
+join ns in _context.NivelServicos on p.CodNivelServico equals ns.CodNivelServico
+join t in _context.Transportadoras on p.CodTransportadora equals t.CodTransportadora
+join pe in _context.PrazoEntregas on p.CodPrazoEntrega equals pe.CodPrazoEntrega into tmp1
+from tmp1result in tmp1.DefaultIfEmpty()
+join pc in _context.ProtocoloCotacaos on p.CodProtocolo equals pc.CodProtocolo into tmp2
+from tmp2result in tmp2.DefaultIfEmpty()
+where (
+from ap in _context.AprovacaoAlcada
+join al in _context.AlcadaAprovacaos on ap.CodAlcadaAprovacao equals al.CodAlcadaAprovacao
+where ap.CodProtocolo == p.CodProtocolo && al.CodTipoAlcadaAprovacao == 2 && ap.DatAprovacao == null
+orderby ap.CodAprovacaoAlcada
+select 0
+).Count() > 0
+select new
+{
+   ns.DscNivelServico,
+   p.CodProtocolo,
+   t.NomFantasia,
+   val_frete = (p.ValFretePeso == null ? 0 : p.ValFretePeso) + (p.ValTaxaTotal == null ? 0 : p.ValTaxaTotal),
+   p.DscJustificativaCanalVermelho,
+   ALCADA = (
+   from aa in _context.AlcadaAprovacaos
+   join aal in _context.AprovacaoAlcada on aa.CodAlcadaAprovacao equals aal.CodAlcadaAprovacao
+   where aal.CodProtocolo == p.CodProtocolo && aa.CodTipoAlcadaAprovacao == 2 && aal.DatAprovacao == null
+   select aa.DscAlcadaAprovacao
+   ).FirstOrDefault(),
+   qtd_dia_prazo = (tmp1result.QtdDiaPrazo == null ? tmp2result.QtdDiaPrazo : tmp1result.QtdDiaPrazo),
+   p.CodUnidadeEmpresa, ue.CodEmpresa, p.CodTransportadora, p.CodLocalidade
+}
+
+===Get Unsuccessful Collection
+
+SELECT p.COD_PROTOCOLO
+	,(
+		SELECT TOP 1 nom_cliente
+		FROM evento_erp erp
+		WHERE erp.cod_protocolo = p.cod_protocolo
+		) AS [cliente] 
+	,t.nom_fantasia
+	,convert(NVARCHAR, r.dat_saida, 103) AS [dat_saida]
+	,convert(NVARCHAR, p.dat_limite_entrega, 103) AS [dat_limite_entrega]
+	,CONCAT (
+		'R$ '
+		,replace(format((p.VAL_FRETE_PESO + p.VAL_TAXA_TOTAL), '#.00'), '.', ',')
+		) AS [VALOR]
+	,STUFF((
+			SELECT CONCAT (
+					','
+					,convert(INTEGER, replace(erp.num_nota_fiscal, 'A', ''))
+					)
+			FROM evento_erp erp
+			WHERE erp.cod_protocolo = p.cod_protocolo
+			FOR XML PATH('')
+			), 1, 1, '') AS [notas]
+	,CONCAT (
+		'R$ '
+		,replace(format(((p.VAL_FRETE_PESO + p.VAL_TAXA_TOTAL) * 0.2), '#.00'), '.', ',')
+		) AS [VALOR_ACAO]
+	,(
+		SELECT TOP 1 DSC_ALCADA_APROVACAO
+		FROM alcada_aprovacao aa
+		INNER JOIN aprovacao_alcada aal ON aal.cod_alcada_aprovacao = aa.cod_alcada_aprovacao
+		WHERE aal.cod_protocolo = p.cod_protocolo
+			AND aal.cod_ocorrencia_transporte = p.COD_OCORRENCIA_TRANSPORTE_ACAO
+			AND aal.dat_aprovacao IS NULL
+		ORDER BY cod_aprovacao_alcada
+		) AS [ALCADA]
+FROM protocolo p
+INNER JOIN unidade_empresa ue ON ue.cod_unidade_empresa = p.cod_unidade_empresa
+INNER JOIN transportadora t ON t.cod_transportadora = p.cod_transportadora
+INNER JOIN romaneio r ON r.cod_romaneio = p.cod_romaneio
+WHERE EXISTS (
+		SELECT 0
+		FROM aprovacao_alcada ap
+		INNER JOIN alcada_aprovacao al ON al.cod_alcada_aprovacao = ap.cod_alcada_aprovacao
+		WHERE ap.cod_protocolo = p.cod_protocolo
+			AND al.COD_TIPO_ALCADA_APROVACAO = 3
+			AND ap.dat_aprovacao IS NULL
+		)
+
+---------------------------------------------------
+
+from p in PROTOCOLOs
+join ue in UNIDADE_EMPRESAs on p.COD_UNIDADE_EMPRESA equals ue.COD_UNIDADE_EMPRESA
+join t in TRANSPORTADORAs on p.COD_TRANSPORTADORA equals t.COD_TRANSPORTADORA
+join r in ROMANEIOs on p.COD_ROMANEIO equals r.COD_ROMANEIO
+where (from ap in APROVACAO_ALCADAs
+join al in ALCADA_APROVACAOs on ap.COD_ALCADA_APROVACAO equals al.COD_ALCADA_APROVACAO
+where ap.COD_PROTOCOLO == p.COD_PROTOCOLO && al.COD_TIPO_ALCADA_APROVACAO == 3 && ap.DAT_APROVACAO == null
+select 0).Count() > 0
+select new
+{ 
+	p.COD_PROTOCOLO, 
+	cliente = (from erp in EVENTO_ERPs where p.COD_PROTOCOLO == erp.COD_PROTOCOLO select erp.NOM_CLIENTE).FirstOrDefault(),
+	t.NOM_FANTASIA,
+	dat_saida = r.DAT_SAIDA.ToString(), 
+	dat_limite_entrega = p.DAT_LIMITE_ENTREGA.ToString(),
+	VALOR = "R$" +  Math.Round(p.VAL_FRETE_PESO.Value + p.VAL_TAXA_TOTAL.Value, 2, MidpointRounding.AwayFromZero).ToString().Replace('.', ','),
+	notas = (from erp in EVENTO_ERPs where erp.COD_PROTOCOLO == p.COD_PROTOCOLO group erp by erp.COD_PROTOCOLO into gerp select string.Join(",", gerp.Select(g=>Convert.ToInt32(g.NUM_NOTA_FISCAL).ToString().Replace("A", string.Empty)))),
+	VALOR_ACAO = "R$" +  Math.Round((p.VAL_FRETE_PESO.Value + p.VAL_TAXA_TOTAL.Value) * (decimal)0.2, 2, MidpointRounding.AwayFromZero).ToString().Replace('.', ','),
+	ALCADA = (
+	from aa in ALCADA_APROVACAOs
+	join aal in APROVACAO_ALCADAs on aa.COD_ALCADA_APROVACAO equals aal.COD_ALCADA_APROVACAO
+	where aal.COD_PROTOCOLO == p.COD_PROTOCOLO && aa.COD_TIPO_ALCADA_APROVACAO == 2 && aal.DAT_APROVACAO == null
+	orderby aal.COD_APROVACAO_ALCADA
+	select aa.DSC_ALCADA_APROVACAO
+	).FirstOrDefault()
+};
+
+===Get Expensive Shipping
+
+SELECT ns.DSC_NIVEL_SERVICO
+	,p.cod_protocolo
+	,t.nom_fantasia
+	,isNull(VAL_FRETE_PESO, 0) + isNull(VAL_TAXA_TOTAL, 0) AS val_frete
+	,(
+		SELECT TOP 1 DSC_ALCADA_APROVACAO
+		FROM alcada_aprovacao aa
+		INNER JOIN aprovacao_alcada aal ON aal.cod_alcada_aprovacao = aa.cod_alcada_aprovacao
+		WHERE aal.cod_protocolo = p.cod_protocolo
+			AND aa.cod_tipo_alcada_aprovacao = 2
+			AND aal.dat_aprovacao IS NULL
+		ORDER BY cod_aprovacao_alcada
+		) AS [ALCADA]
+	,isNull(pe.qtd_dia_prazo, pc.qtd_dia_prazo) AS qtd_dia_prazo
+	,p.cod_romaneio
+FROM protocolo p
+INNER JOIN unidade_empresa ue ON ue.cod_unidade_empresa = p.cod_unidade_empresa
+INNER JOIN nivel_Servico ns ON ns.cod_nivel_servico = p.cod_nivel_servico
+INNER JOIN transportadora t ON t.cod_transportadora = p.cod_transportadora
+LEFT JOIN prazo_entrega pe ON pe.cod_prazo_entrega = p.cod_prazo_entrega
+LEFT JOIN protocolo_cotacao pc ON pc.cod_protocolo = p.cod_protocolo
+WHERE EXISTS (
+		SELECT 0
+		FROM aprovacao_alcada ap
+		INNER JOIN alcada_aprovacao al ON al.cod_alcada_aprovacao = ap.cod_alcada_aprovacao
+		WHERE ap.cod_protocolo = p.cod_protocolo
+			AND al.COD_TIPO_ALCADA_APROVACAO = 5
+			AND ap.dat_aprovacao IS NULL
+		) 
+
+-----------------------------
+
+from p in PROTOCOLOs
+join ue in UNIDADE_EMPRESAs on p.COD_UNIDADE_EMPRESA equals ue.COD_UNIDADE_EMPRESA
+join ns in NIVEL_SERVICOs on p.COD_NIVEL_SERVICO equals ns.COD_NIVEL_SERVICO
+join t in TRANSPORTADORAs on p.COD_TRANSPORTADORA equals t.COD_TRANSPORTADORA
+join pe in PRAZO_ENTREGAs on p.COD_PRAZO_ENTREGA equals pe.COD_PRAZO_ENTREGA into tmp1
+from tmp1result in tmp1.DefaultIfEmpty()
+join pc in PROTOCOLO_COTACAOs on p.COD_PROTOCOLO equals pc.COD_PROTOCOLO into tmp2
+from tmp2result in tmp2.DefaultIfEmpty()
+where (from ap in APROVACAO_ALCADAs
+join al in ALCADA_APROVACAOs on ap.COD_ALCADA_APROVACAO equals al.COD_ALCADA_APROVACAO
+where ap.COD_PROTOCOLO == p.COD_PROTOCOLO && al.COD_TIPO_ALCADA_APROVACAO == 5 && ap.DAT_APROVACAO == null
+select 0).Count() > 0
+select new
+{
+	ns.DSC_NIVEL_SERVICO,
+	p.COD_PROTOCOLO,
+	t.NOM_FANTASIA,
+	val_frete = (p.VAL_FRETE_PESO == null ? 0 : p.VAL_FRETE_PESO) + (p.VAL_TAXA_TOTAL == null ? 0 : p.VAL_TAXA_TOTAL),
+	ALCADA = (
+	   from aa in ALCADA_APROVACAOs
+	   join aal in APROVACAO_ALCADAs on aa.COD_ALCADA_APROVACAO equals aal.COD_ALCADA_APROVACAO
+	   where aal.COD_PROTOCOLO == p.COD_PROTOCOLO && aa.COD_TIPO_ALCADA_APROVACAO == 2 && aal.DAT_APROVACAO == null
+	   select aa.DSC_ALCADA_APROVACAO
+	   ).FirstOrDefault(),
+	qtd_dia_prazo = (tmp1result.QTD_DIA_PRAZO == null ? tmp2result.QTD_DIA_PRAZO : tmp1result.QTD_DIA_PRAZO),
+	p.COD_ROMANEIO
+};
+
+===Get Ocurrences
+
+SELECT DISTINCT p.COD_PROTOCOLO
+	,(
+		SELECT TOP 1 nom_cliente
+		FROM evento_erp erp
+		WHERE erp.cod_protocolo = p.cod_protocolo
+		) AS [cliente]
+	,mop.DSC_MOTIVO_OCORRENCIA_PADRAO
+	,t.nom_fantasia
+	,convert(NVARCHAR, r.dat_saida, 103) AS [dat_saida]
+	,convert(NVARCHAR, p.dat_limite_entrega, 103) AS [dat_limite_entrega]
+	,(p.VAL_FRETE_PESO + p.VAL_TAXA_TOTAL) AS [VALOR]
+	,STUFF((
+			SELECT CONCAT (
+					', '
+					,convert(INTEGER, erp.num_nota_fiscal)
+					)
+			FROM evento_erp erp
+			WHERE erp.cod_protocolo = p.cod_protocolo
+			FOR XML PATH('')
+			), 1, 1, '') AS [notas]
+	,p.VALIDACAO_ACAO_TRANSPORTADORA
+	,u.nom_usuario
+	,l.sgl_unidade_federacao
+FROM protocolo p
+INNER JOIN unidade_empresa ue ON ue.cod_unidade_empresa = p.cod_unidade_empresa
+INNER JOIN ocorrencia_transporte ot ON ot.cod_ocorrencia_transporte = p.cod_ocorrencia_transporte_acao
+INNER JOIN aprovacao_alcada aa ON aa.cod_protocolo = p.cod_protocolo
+	AND aa.cod_ocorrencia_transporte = p.COD_OCORRENCIA_TRANSPORTE_ACAO
+INNER JOIN romaneio r ON r.cod_romaneio = p.cod_romaneio
+INNER JOIN localidade l ON l.cod_localidade = p.cod_localidade
+INNER JOIN motivo_ocorrencia_padrao mop ON mop.cod_motivo_ocorrencia_padrao = ot.cod_motivo_ocorrencia_padrao
+INNER JOIN transportadora t ON t.cod_transportadora = r.cod_transportadora
+INNER JOIN usuario u ON u.cod_usuario = aa.cod_usuario_validador
+WHERE aa.DAT_APROVACAO IS NULL
+	AND aa.cod_alcada_aprovacao IN (
+		SELECT ao.cod_alcada_aprovacao
+		FROM aprovador_ocorrencia ao
+		WHERE ao.cod_usuario = {COD_USUARIO: int}
+			AND ao.cod_unidade_empresa = ue.cod_unidade_empresa
+		)
 and p.cod_unidade_empresa = {cod_unidade_empresa?: int}
 and ue.cod_empresa = {cod_empresa?: int}
 and p.cod_transportadora = {cod_transportadora?: int}
@@ -292,6 +511,173 @@ and erp.COD_CANAL_VENDA = {cod_canal_venda?: int}
 )
 
 
---------------------------------------
+----------------------------------
 
-======================================================
+from p in PROTOCOLOs
+join ue in UNIDADE_EMPRESAs on p.COD_UNIDADE_EMPRESA equals ue.COD_UNIDADE_EMPRESA
+join ot in OCORRENCIA_TRANSPORTEs on p.COD_OCORRENCIA_TRANSPORTE_ACAO equals ot.COD_OCORRENCIA_TRANSPORTE
+join aa in APROVACAO_ALCADAs on p.COD_PROTOCOLO equals aa.COD_PROTOCOLO where p.COD_OCORRENCIA_TRANSPORTE_ACAO == aa.COD_OCORRENCIA_TRANSPORTE
+join r in ROMANEIOs on p.COD_ROMANEIO equals r.COD_ROMANEIO
+join l in LOCALIDADEs on p.COD_LOCALIDADE equals l.COD_LOCALIDADE
+join mop in MOTIVO_OCORRENCIA_PADRAOs on ot.COD_MOTIVO_OCORRENCIA_PADRAO equals mop.COD_MOTIVO_OCORRENCIA_PADRAO
+join t in TRANSPORTADORAs on r.COD_TRANSPORTADORA equals t.COD_TRANSPORTADORA
+join u in USUARIOs on aa.COD_USUARIO_VALIDADOR equals u.COD_USUARIO
+where aa.DAT_APROVACAO == null && (from ao in APROVADOR_OCORRENCIAs where ao.COD_USUARIO == 855 && ao.COD_UNIDADE_EMPRESA == ue.COD_UNIDADE_EMPRESA select ao.COD_ALCADA_APROVACAO).Contains(aa.COD_ALCADA_APROVACAO)
+select new { p.COD_PROTOCOLO, cliente = (from erp in EVENTO_ERPs where p.COD_PROTOCOLO == erp.COD_PROTOCOLO select erp.NOM_CLIENTE).FirstOrDefault(), mop.DSC_MOTIVO_OCORRENCIA_PADRAO, 
+t.NOM_FANTASIA, dat_saida = r.DAT_SAIDA.ToString(), dat_limite_entrega = p.DAT_LIMITE_ENTREGA.ToString(), VALOR = p.VAL_FRETE_PESO + p.VAL_TAXA_TOTAL, p.VALIDACAO_ACAO_TRANSPORTADORA,
+u.NOM_USUARIO, l.SGL_UNIDADE_FEDERACAO}
+
+===Get Protocol Weight
+
+SELECT p.COD_PROTOCOLO
+	,STUFF((
+			SELECT CONCAT (
+					','
+					,convert(INTEGER, replace(erp.num_nota_fiscal, 'A', ''))
+					)
+			FROM evento_erp erp
+			WHERE erp.cod_protocolo = p.cod_protocolo
+			FOR XML PATH('')
+			), 1, 1, '') AS [notas]
+	,STUFF((
+			SELECT CONCAT (
+					',('
+					,sum(qtd_produto)
+					,') '
+					,ierp.dsc_grupo_produto
+					,' '
+					)
+			FROM evento_erp erp
+			INNER JOIN item_evento_erp ierp ON ierp.cod_evento_erp = erp.cod_evento_erp
+			WHERE erp.cod_protocolo = p.cod_protocolo
+			GROUP BY ierp.dsc_grupo_produto
+			FOR XML PATH('')
+			), 1, 1, '') AS [produtos]
+	,p.qtd_peso_total
+	,CONCAT (
+		'R$ '
+		,replace(format((p.VAL_FRETE_PESO + p.VAL_TAXA_TOTAL), '#.00'), '.', ',')
+		) AS [valor]
+FROM protocolo p
+INNER JOIN unidade_empresa ue ON ue.cod_unidade_empresa = p.cod_unidade_empresa
+WHERE EXISTS (
+		SELECT 0
+		FROM aprovacao_alcada ap
+		INNER JOIN alcada_aprovacao al ON al.cod_alcada_aprovacao = ap.cod_alcada_aprovacao
+		WHERE ap.cod_protocolo = p.cod_protocolo
+			AND al.COD_TIPO_ALCADA_APROVACAO = 4
+			AND ap.dat_aprovacao IS NULL
+		)
+and p.cod_unidade_empresa = {cod_unidade_empresa?: int}
+and ue.cod_empresa = {cod_empresa?: int}
+and p.cod_transportadora = {cod_transportadora?: int}
+and p.cod_localidade in (
+select cod_localidade from localidade 
+where sgl_unidade_federacao in ({sgl_unidade_federacao?: string[]})
+)
+and exists (
+select 0 
+from evento_erp erp 
+where erp.cod_protocolo = p.cod_protocolo 
+and erp.COD_CANAL_VENDA = {cod_canal_venda?: int}
+)
+
+
+----------------------------------
+
+from p in PROTOCOLOs 
+join ue in UNIDADE_EMPRESAs on p.COD_UNIDADE_EMPRESA equals ue.COD_UNIDADE_EMPRESA
+where (from ap in APROVACAO_ALCADAs
+join al in ALCADA_APROVACAOs on ap.COD_ALCADA_APROVACAO equals al.COD_ALCADA_APROVACAO
+where ap.COD_PROTOCOLO == p.COD_PROTOCOLO && al.COD_TIPO_ALCADA_APROVACAO == 4 && ap.DAT_APROVACAO == null
+select 0).Count() > 0
+select new 
+{
+	p.COD_PROTOCOLO,
+	notas = (from erp in EVENTO_ERPs where erp.COD_PROTOCOLO == p.COD_PROTOCOLO group erp by erp.COD_PROTOCOLO into gerp select string.Join(",", gerp.Select(g=>Convert.ToInt32(g.NUM_NOTA_FISCAL).ToString().Replace("A", string.Empty)))).AsEnumerable(),
+	produtos = (from erp in EVENTO_ERPs join ierp in ITEM_EVENTO_ERPs on erp.COD_EVENTO_ERP equals ierp.COD_EVENTO_ERP where erp.COD_PROTOCOLO == p.COD_PROTOCOLO group new {erp, ierp} by new {ierp.DSC_GRUPO_PRODUTO} into gerp select "(" + gerp.Sum(x => x.ierp.QTD_PRODUTO) + ")" + gerp.Key.DSC_GRUPO_PRODUTO + " " ).AsEnumerable(),
+	p.QTD_PESO_TOTAL,
+	valor = "R$" +  Math.Round(p.VAL_FRETE_PESO.Value + p.VAL_TAXA_TOTAL.Value, 2, MidpointRounding.AwayFromZero).ToString().Replace('.', ',')
+
+};
+
+===Get Ocurrences Revalidation
+
+SELECT p.COD_PROTOCOLO
+	,(
+		SELECT TOP 1 nom_cliente
+		FROM evento_erp erp
+		WHERE erp.cod_protocolo = p.cod_protocolo
+		) AS [cliente]
+	,mop.DSC_MOTIVO_OCORRENCIA_PADRAO
+	,t.nom_fantasia
+	,convert(NVARCHAR, r.dat_saida, 103) AS [dat_saida]
+	,convert(NVARCHAR, p.dat_limite_entrega, 103) AS [dat_limite_entrega]
+	,CONCAT (
+		'R$ '
+		,replace(format((p.VAL_FRETE_PESO + p.VAL_TAXA_TOTAL), '#.00'), '.', ',')
+		) AS [VALOR]
+	,STUFF((
+			SELECT CONCAT (
+					','
+					,convert(INTEGER, erp.num_nota_fiscal)
+					,'-'
+					,erp.num_serie_nota_fiscal
+					)
+			FROM evento_erp erp
+			WHERE erp.cod_protocolo = p.cod_protocolo
+			FOR XML PATH('')
+			), 1, 1, '') AS [notas]
+	,VALIDACAO_ACAO_TRANSPORTADORA
+	,CASE 
+		WHEN VALIDACAO_ACAO_TRANSPORTADORA = 'Reentrega'
+			THEN CONCAT (
+					'R$ '
+					,replace(format(((p.VAL_FRETE_PESO + p.VAL_TAXA_TOTAL) * 0.5), '#.00'), '.', ',')
+					)
+		ELSE CONCAT (
+				'R$ '
+				,replace(format((p.VAL_FRETE_PESO + p.VAL_TAXA_TOTAL), '#.00'), '.', ',')
+				)
+		END AS [VALOR_ACAO]
+FROM protocolo p
+INNER JOIN localidade l ON l.cod_localidade = p.cod_localidade
+INNER JOIN unidade_empresa ue ON ue.cod_unidade_empresa = p.cod_unidade_empresa
+INNER JOIN ocorrencia_transporte ot ON ot.cod_ocorrencia_transporte = p.cod_ocorrencia_transporte_acao
+INNER JOIN motivo_ocorrencia_padrao mop ON mop.cod_motivo_ocorrencia_padrao = ot.cod_motivo_ocorrencia_padrao
+INNER JOIN transportadora t ON t.cod_transportadora = p.cod_transportadora
+INNER JOIN romaneio r ON r.cod_romaneio = p.cod_romaneio
+WHERE isNull(p.ind_acao_transportadora, 0) = 1
+	AND p.dat_acao_transportadora IS NOT NULL
+	AND isNull(p.VALIDACAO_ACAO_TRANSPORTADORA, '') <> ''
+and p.cod_protocolo = {cod_protocolo?: int}
+and exists (
+select 0 from evento_erp erp 
+where erp.cod_protocolo = p.cod_protocolo and erp.num_nota_fiscal = {num_nota_fiscal?: int}
+)
+
+-----------------------------------
+
+from p in PROTOCOLOs 
+join l in LOCALIDADEs on p.COD_LOCALIDADE equals l.COD_LOCALIDADE
+join ue in UNIDADE_EMPRESAs on p.COD_UNIDADE_EMPRESA equals ue.COD_UNIDADE_EMPRESA
+join ot in OCORRENCIA_TRANSPORTEs on p.COD_OCORRENCIA_TRANSPORTE_ACAO equals ot.COD_OCORRENCIA_TRANSPORTE
+join mop in MOTIVO_OCORRENCIA_PADRAOs on ot.COD_MOTIVO_OCORRENCIA_PADRAO equals mop.COD_MOTIVO_OCORRENCIA_PADRAO
+join t in TRANSPORTADORAs on p.COD_TRANSPORTADORA equals t.COD_TRANSPORTADORA
+join r in ROMANEIOs on p.COD_ROMANEIO equals r.COD_ROMANEIO
+where (p.IND_ACAO_TRANSPORTADORA == null ? false : p.IND_ACAO_TRANSPORTADORA) == true && p.DAT_ACAO_TRANSPORTADORA != null && (p.VALIDACAO_ACAO_TRANSPORTADORA == null ? "" : p.VALIDACAO_ACAO_TRANSPORTADORA) != ""
+select new
+{
+p.COD_PROTOCOLO,
+cliente = (from erp in EVENTO_ERPs where p.COD_PROTOCOLO == erp.COD_PROTOCOLO select erp.NOM_CLIENTE).FirstOrDefault(),
+mop.DSC_MOTIVO_OCORRENCIA_PADRAO,
+t.NOM_FANTASIA,
+dat_saida = r.DAT_SAIDA.ToString(), 
+dat_limite_entrega = p.DAT_LIMITE_ENTREGA.ToString(),
+VALOR = "R$" +  Math.Round(p.VAL_FRETE_PESO.Value + p.VAL_TAXA_TOTAL.Value, 2, MidpointRounding.AwayFromZero).ToString().Replace('.', ','),
+notas = (from erp in EVENTO_ERPs where erp.COD_PROTOCOLO == p.COD_PROTOCOLO select Convert.ToInt32(erp.NUM_NOTA_FISCAL).ToString().Replace("A", string.Empty)).AsEnumerable(),
+p.VALIDACAO_ACAO_TRANSPORTADORA,
+VALOR_ACAO = (p.VALIDACAO_ACAO_TRANSPORTADORA == "'Reentrega'" ? ("R$" +  Math.Round((p.VAL_FRETE_PESO.Value + p.VAL_TAXA_TOTAL.Value) * (decimal)0.5, 2, MidpointRounding.AwayFromZero).ToString().Replace('.', ',')) : ("R$" +  Math.Round(p.VAL_FRETE_PESO.Value + p.VAL_TAXA_TOTAL.Value, 2, MidpointRounding.AwayFromZero).ToString().Replace('.', ',')))
+}
+
+===========================================================================
